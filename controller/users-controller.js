@@ -1,52 +1,67 @@
 const HttpError = require("../models/http-error");
-const { v4: uuidv4 } = require("uuid");
 const { validationResult } = require("express-validator");
+const User = require("../models/user");
 
-const DUMMY_USERS = [
-  {
-    id: "u1",
-    name: "Nick",
-    email: "test@test.com",
-    password: "123"
+exports.getAllUsers = async (req, res, next) => {
+  let users;
+  try {
+    users = await User.find({}, "-password");
+  } catch (err) {
+    return next(new HttpError("Could not fetch users", 500));
   }
-];
-
-exports.getAllUsers = (req, res, next) => {
-  const users = DUMMY_USERS;
 
   res.status(200).json({
     success: true,
     msg: "Successful request",
-    data: users
+    data: users.map(user => user.toObject())
   });
 };
 
-exports.createNewUser = (req, res, next) => {
+exports.createNewUser = async (req, res, next) => {
   const error = validationResult(req);
   if (!error.isEmpty()) {
-    throw new HttpError("Please enter all inputs", 400);
+    return next(new HttpError("Please enter all inputs", 400));
   }
+
   const { name, email, password } = req.body;
+  let newUser;
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(new HttpError("Email already in use", 401));
+    }
+    newUser = new User({
+      name,
+      email,
+      password,
+      image:
+        "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      places: []
+    });
+  } catch (err) {
+    return next(new HttpError("Could not create user", 500));
+  }
 
-  const newUser = {
-    id: uuidv4(),
-    name,
-    email,
-    password
-  };
-
-  DUMMY_USERS.push(newUser);
-
+  try {
+    newUser.save();
+  } catch (err) {
+    return next(new HttpError("Could not save user", 500));
+  }
   res.status(201).json({
     success: true,
     msg: "Sucessfully created new user",
-    data: newUser
+    data: newUser.toObject({ getters: true })
   });
 };
 
-exports.loginUser = (req, res, next) => {
+exports.loginUser = async (req, res, next) => {
   const { email, password } = req.body;
-  const identifiedUser = DUMMY_USERS.find(user => user.email === email);
+  let identifiedUser;
+  try {
+    identifiedUser = await User.findOne({ email });
+  } catch (err) {
+    return next(new HttpError("Could not verify user", 500));
+  }
 
   if (!identifiedUser || identifiedUser.password !== password) {
     return next(new HttpError("Invalid credentials", 401));
