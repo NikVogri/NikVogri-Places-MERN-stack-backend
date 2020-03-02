@@ -34,8 +34,7 @@ exports.createNewUser = async (req, res, next) => {
       name,
       email,
       password,
-      image:
-        "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      image: req.file.path,
       places: []
     });
   } catch (err) {
@@ -69,6 +68,7 @@ exports.loginUser = async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    msg: "User logged in"
+    msg: "User logged in",
+    user: identifiedUser.toObject({ getters: true })
   });
 };

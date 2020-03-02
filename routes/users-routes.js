@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const usersController = require("../controller/users-controller");
 const { check } = require("express-validator");
+const fileUpload = require("../middleware/file-upload");
 
 ////////////
 // type: GET
@@ -13,6 +14,7 @@ router.get("/", usersController.getAllUsers);
 // desc: sign up user
 router.post(
   "/signup",
+  fileUpload.single("image"),
   [
     check("name").notEmpty(),
     check("email")

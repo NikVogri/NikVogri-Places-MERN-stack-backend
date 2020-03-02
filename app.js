@@ -2,6 +2,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const HttpError = require("./models/http-error");
 const mongoose = require("mongoose");
+const fs = require("fs");
+const path = require("path");
 
 const placesRoutes = require("./routes/places-routes");
 const userRoutes = require("./routes/users-routes");
@@ -9,6 +11,8 @@ const app = express();
 
 // middleware - 'use' triggers on ALL requests.
 app.use(bodyParser.json());
+// this is to statically serve data like images
+app.use("/uploads/images", express.static(path.join("uploads", "images")));
 
 // enable CORS
 app.use((req, res, next) => {
@@ -33,6 +37,12 @@ app.use((req, res, next) => {
 
 // error handler
 app.use((error, req, res, next) => {
+  // if theres a file saved, but creating failed.
+  if (req.file) {
+    fs.unlink(req.file.path, err => {
+      console.log(err);
+    });
+  }
   // in case headers have somehow been already sent
   if (res.headerSent) {
     return next(error);
