@@ -2,6 +2,7 @@ const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const getCoordsForAddress = require("../util/location");
 const mongoose = require("mongoose");
+const fs = require("fs");
 
 const Place = require("../models/place");
 const User = require("../models/user");
@@ -29,8 +30,7 @@ exports.createPlace = async (req, res, next) => {
     address,
     location: coordinates,
     creator,
-    image:
-      "https://images.pexels.com/photos/3375997/pexels-photo-3375997.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260"
+    image: req.file.path
   });
 
   let user;
@@ -84,7 +84,9 @@ exports.updatePlace = async (req, res, next) => {
   } catch (err) {
     return next(new HttpError("Something went wrong while fetching", 500));
   }
-
+  if (updatedPlace.creator.toString() !== req.userData.userId) {
+    return next(new HttpError("You are not allowed to edit this place", 401));
+  }
   // save to db
   try {
     await updatedPlace.save();
@@ -114,6 +116,12 @@ exports.deletePlace = async (req, res, next) => {
     return next(new HttpError("Could not find a place for this id", 404));
   }
 
+  if (place.creator.id.toString() !== req.userData.userId) {
+    return next(new HttpError("You are not allowed to edit this place", 401));
+  }
+
+  const imagePath = place.image;
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
@@ -126,7 +134,7 @@ exports.deletePlace = async (req, res, next) => {
   } catch (err) {
     return next(new HttpError("Could not remove place", 500));
   }
-
+  fs.unlink(imagePath, err => console.log(err));
   res.status(200).json({
     success: true,
     msg: "Place successfully deleted"
