@@ -13,7 +13,7 @@ exports.createPlace = async (req, res, next) => {
     return next(new HttpError("Invalid inputs, please check your data", 422));
   }
 
-  const { title, description, address, creator } = req.body;
+  const { title, description, address } = req.body;
   // check if data is there
   // save to database
   // send info back to user
@@ -29,13 +29,13 @@ exports.createPlace = async (req, res, next) => {
     description,
     address,
     location: coordinates,
-    creator,
+    creator: req.userData.userId,
     image: req.file.path
   });
 
   let user;
   try {
-    user = await User.findById(creator);
+    user = await User.findById(req.userData.userId);
   } catch (err) {
     return next(new HttpError("Could not fetch user", 500));
   }
