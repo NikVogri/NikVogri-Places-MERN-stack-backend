@@ -63,7 +63,7 @@ exports.createNewUser = async (req, res, next) => {
         userId: newUser.id,
         email: newUser.email
       },
-      "noneiseverygoing_tofindthisS_IA_DjiSecret",
+      process.env.JWT_KEY,
       { expiresIn: "1h" }
     );
   } catch (err) {
@@ -84,6 +84,7 @@ exports.createNewUser = async (req, res, next) => {
 exports.loginUser = async (req, res, next) => {
   const { email, password } = req.body;
   let identifiedUser;
+
   try {
     identifiedUser = await User.findOne({ email });
   } catch (err) {
@@ -92,6 +93,7 @@ exports.loginUser = async (req, res, next) => {
   if (!identifiedUser) {
     return next(new HttpError("Invalid credentials", 403));
   }
+
   try {
     isValidPassword = await bcrypt.compare(password, identifiedUser.password);
     if (!isValidPassword) {
@@ -108,7 +110,7 @@ exports.loginUser = async (req, res, next) => {
         id: identifiedUser.id,
         email: identifiedUser.email
       },
-      "noneiseverygoing_tofindthisS_IA_DjiSecret",
+      process.env.JWT_KEY,
       { expiresIn: "1h" }
     );
   } catch (err) {
